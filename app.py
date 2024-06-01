@@ -1,12 +1,15 @@
-import RPi.GPIO as GPIO
-from mfrc522 import SimpleMFRC522
 from flask import Flask, render_template
 from flask_socketio import SocketIO, join_room, leave_room
+import serial
+import threading
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origin="*")
 
-card_present = False
+serialPort = 'COM4'
+
+arduino = serial.Serial(serialPort, 9600)
+arduino.timeout = 1
 
 @app.route('/')
 def index():
@@ -32,36 +35,21 @@ def on_leave(data):
     leave_room(room)
     print(f'Client left room: {room}')
 
-def rfid_reader():
-    global card_present
-    reader = SimpleMFRC522()
+def read_from_serial():
+    card_present = False
+    card_uid = None
 
-    try:
-        print("Hold a card near the reader")
-
-        # Continuously detect cards
-        while True:
-            # Scan for cards
-            id, text = reader.read()
-
-            # If a card is present and was not present before, send a "card detected" signal
-            if id and not card_present:
-                print("Card detected. UID:", id)
-                socketio.emit('card_detected', {'uid': id}, room='room1')  # Replace 'room1' with your room name
+    while True:
+        line = arduino.readline().decode('utf-8').strip()
+        if line and line.startswith('Card UID:'):
+            uid = line.split(': ')[1].replace(' ', '')
+            if not card_present or card_uid != uid:
+                card_uid = uid
+                socketio.emit('card_detected', {'uid': uid}, room='room1')
                 card_present = True
 
-            # If no card is present and a card was present before, send a "card removed" signal
-            elif not id and card_present:
-                print("Card removed")
-                socketio.emit('card_removed', room='room1')  # Replace 'room1' with your room name
-                card_present = False
-
-    finally:
-        GPIO.cleanup()
-
 if __name__ == '__main__':
-    import threading
-    rfid_thread = threading.Thread(target=rfid_reader)
-    rfid_thread.daemon = True
-    rfid_thread.start()
+    serial_thread = threading.Thread(target=read_from_serial)
+    serial_thread.daemon = True
+    serial_thread.start()
     socketio.run(app, host='0.0.0.0', port=65432)

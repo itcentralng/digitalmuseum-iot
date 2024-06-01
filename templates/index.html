@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>RFID Client</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <h1>RFID Reader Client</h1>
+    <h1 id="cardDetected"></h1>
+    <script type="text/javascript">
+        var cards = {
+            "D307451C":"White Card",
+            "D34FE60C":"Blue Card",
+        }
+        var socket = io('http://127.0.0.1:65432');
+
+        socket.on('connect', function() {
+            document.getElementById('cardDetected').innerHTML = "Connected"
+            // alert('Connected to server');
+            socket.emit('join', {room: 'room1'});  // Join the specific room
+        });
+
+        socket.on('card_detected', function(data) {
+            // alert('Card detected with UID: ' + data.uid);
+            document.getElementById('cardDetected').innerHTML = cards[data.uid]
+        });
+        
+        socket.on('card_removed', function() {
+            // alert('Card removed');
+            document.getElementById('cardDetected').innerHTML = "Card Removed"
+            
+        });
+
+        socket.on('disconnect', function() {
+            // alert('Disconnected from server');
+        });
+    </script>
+</body>
+</html>
