@@ -1,12 +1,8 @@
 function init(){
-    var cards = {
-        "D307451C":"White Card",
-        "D34FE60C":"Blue Card",
-    }
     var socket = io('http://127.0.0.1:65432');
 
     socket.on('connect', function() {
-        document.getElementById('cardDetected').innerHTML = "Connected"
+        // document.getElementById('cardDetected').innerHTML = "Connected"
         // alert('Connected to server');
         socket.emit('join', {room: 'room1'});  // Join the specific room
     });
@@ -14,12 +10,13 @@ function init(){
     socket.on('card_detected', function(data) {
         // alert('Card detected with UID: ' + data.uid);
         // document.getElementById('cardDetected').innerHTML = cards[data.uid]
+        // console.log(data.uid)
         setContent(data.uid)
     });
     
     socket.on('card_removed', function() {
         // alert('Card removed');
-        document.getElementById('cardDetected').innerHTML = "Card Removed"
+        // document.getElementById('cardDetected').innerHTML = "Card Removed"
         
     });
 
@@ -28,18 +25,20 @@ function init(){
     });
 }
 
-function toggleSidebar() {
+function showSidebar() {
     var sidebar = document.getElementById("sidebar");
-    if (sidebar.style.width === "0px" || sidebar.style.width === "") {
-        sidebar.style.width = "250px";
-    } else {
-        sidebar.style.width = "0px";
-    }
+    sidebar.style.width = "300px";
+}
+
+function hideSidebar() {
+    var sidebar = document.getElementById("sidebar");
+    sidebar.style.width = "0px";
 }
 
 function setContent(UUID){
-    document.getElementById('sidebar').innerHTML = contents[UUID]['sidebar']
-    document.getElementById('content').innerHTML = contents[UUID]['content']
+    document.getElementById('sidebar').innerHTML = contents[UUID]['sidebar'];
+    document.getElementById('content').innerHTML = contents[UUID]['content'];
+    showSidebar();
 }
 
 let contents = {
